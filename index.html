@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FallLead Elite · IFA Lead Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@400;500&family=Newsreader:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+--void:#04050a;--surface:#080a12;--surface-2:#0c0e18;--surface-3:#10121e;
+--border:#161a2a;--border-lit:#1e2238;--border-hot:#2a1a1a;
+--text:#9e9ab8;--dim:#4e4a68;--bright:#e8e4ff;--white:#fff;
+--accent:#7b5cd4;--accent-dim:rgba(123,92,212,.10);
+--gold:#c9973e;--gold-dim:rgba(201,151,62,.08);
+--green:#3db88a;--green-dim:rgba(61,184,138,.08);
+--red:#d44040;--red-dim:rgba(212,64,64,.08);--red-hot:rgba(212,64,64,.18);
+--cyan:#4a9ec8;--orange:#d48a3d;--orange-dim:rgba(212,138,61,.08);
+--serif:'Cormorant Garamond',Georgia,serif;
+--body:'Newsreader',Georgia,serif;
+--mono:'DM Mono',monospace;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--void);color:var(--text);min-height:100vh;overflow-x:hidden;font-size:14px;line-height:1.7}
+::selection{background:var(--accent);color:var(--void)}
+
+/* noise overlay */
+body::after{content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.018;
+background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:200px}
+
+.app{max-width:1000px;margin:0 auto;padding:24px 20px}
+
+/* ═══ HEADER ═══ */
+.hdr{text-align:center;padding:48px 0 36px;position:relative}
+.hdr::before{content:'◊';position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:13px;color:var(--accent);opacity:.3;font-family:var(--mono)}
+.hdr h1{font-family:var(--serif);font-size:clamp(30px,5vw,48px);font-weight:700;color:var(--bright);letter-spacing:-.03em}
+.hdr h1 em{font-style:italic;color:var(--gold)}
+.hdr .sub{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:.06em;margin-top:6px}
+.hdr .tagline{font-family:var(--body);font-style:italic;font-size:15px;color:var(--text);margin-top:10px;opacity:.6}
+
+/* ═══ STATS BAR ═══ */
+.stats{display:flex;justify-content:center;gap:24px;padding:16px;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-val{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--bright)}
+.stat-label{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase}
+.stat-val.vul{color:var(--red)}
+.stat-val.comp{color:var(--orange)}
+.stat-val.clear{color:var(--green)}
+
+/* ═══ PANELS ═══ */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden}
+.panel::before{content:attr(data-engine);position:absolute;top:-1px;right:14px;font-family:var(--mono);font-size:8px;color:var(--dim);background:var(--void);padding:2px 8px;border-radius:0 0 4px 4px;letter-spacing:.08em;text-transform:uppercase}
+.panel-glow{overflow:hidden}
+.panel-glow::after{content:'';position:absolute;top:0;right:0;width:250px;height:250px;background:radial-gradient(circle,var(--accent-dim),transparent);pointer-events:none}
+.label{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;display:block}
+
+/* ═══ UPLOAD ZONE ═══ */
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;cursor:pointer;transition:all .3s}
+.upload-zone:hover,.upload-zone.active{border-color:var(--accent);background:var(--accent-dim)}
+.upload-zone h3{font-family:var(--serif);font-size:20px;color:var(--bright);margin-bottom:6px}
+.upload-zone p{font-family:var(--mono);font-size:11px;color:var(--dim)}
+.file-list{margin-top:14px;text-align:left}
+.file-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--void);border-radius:6px;margin-bottom:4px;font-family:var(--mono);font-size:11px;color:var(--text)}
+.file-item .size{color:var(--dim);margin-left:auto}
+.file-item .remove{color:var(--red);cursor:pointer;opacity:.5}
+.file-item .remove:hover{opacity:1}
+
+/* ═══ CONTROLS ═══ */
+.controls{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
+.btn{padding:11px 24px;border:none;border-radius:9px;font-family:var(--mono);font-size:12px;font-weight:500;cursor:pointer;letter-spacing:.02em;transition:all .2s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:#6a4bc3;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--dim)}.btn-outline:hover{border-color:var(--text);color:var(--text)}
+.hint{font-family:var(--mono);font-size:9px;color:var(--dim);margin-left:auto}
+
+/* ═══ SETTINGS ═══ */
+.settings{display:none;margin-top:16px}
+.settings.open{display:block}
+.key-row{display:flex;gap:8px;margin-bottom:6px;align-items:center}
+.key-label{font-family:var(--mono);font-size:10px;color:var(--dim);min-width:72px}
+.key-input{flex:1;padding:7px 10px;background:var(--void);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--mono);font-size:11px}
+.key-dot{width:7px;height:7px;border-radius:50%;background:var(--dim)}.key-dot.on{background:var(--green)}
+
+/* ═══ RESULTS ═══ */
+.results{display:none}.results.show{display:block}
+
+/* vulnerability alert */
+.vul-alert{background:var(--red-hot);border:1px solid rgba(212,64,64,.25);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.vul-alert h3{font-family:var(--serif);font-size:18px;color:var(--red);margin-bottom:6px}
+.vul-alert p{font-size:13px;color:#c87070;line-height:1.6}
+
+/* lead cards */
+.lead-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.lead-card{background:var(--void);border:1px solid var(--border);border-radius:10px;padding:14px 16px;transition:border-color .3s;position:relative}
+.lead-card:hover{border-color:var(--border-lit)}
+.lead-card.vul{border-left:3px solid var(--red)}
+.lead-card.comp{border-left:3px solid var(--orange)}
+.lead-card.good{border-left:3px solid var(--green)}
+.lead-card.junk{border-left:3px solid var(--dim);opacity:.6}
+.lead-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.lead-name{font-family:var(--serif);font-size:16px;font-weight:600;color:var(--bright)}
+.lead-score{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:4px;margin-left:auto}
+.lead-score.high{background:var(--green-dim);color:var(--green)}
+.lead-score.med{background:var(--gold-dim);color:var(--gold)}
+.lead-score.low{background:var(--red-dim);color:var(--red)}
+.lead-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.tag{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;letter-spacing:.04em}
+.tag-vul{background:var(--red-dim);color:var(--red)}
+.tag-comp{background:var(--orange-dim);color:var(--orange)}
+.tag-attr{background:var(--accent-dim);color:var(--accent)}
+.tag-route{background:var(--green-dim);color:var(--green)}
+.lead-body{font-size:13px;color:var(--text);line-height:1.6}
+.lead-routing{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-family:var(--mono);font-size:10px;color:var(--dim)}
+
+/* bloom vector mini */
+.bloom-mini{display:flex;gap:3px;align-items:flex-end;height:30px;margin:6px 0}
+.bloom-bar{width:12px;border-radius:2px 2px 0 0;transition:height .8s cubic-bezier(.16,1,.3,1)}
+
+/* campaign attribution */
+.channel-row{display:grid;grid-template-columns:100px repeat(4,1fr);gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11px;align-items:center}
+.channel-row.head{color:var(--dim);font-size:9px;text-transform:uppercase;letter-spacing:.06em}
+.mismatch{color:var(--red)}
+
+/* FreudEngine overlay */
+.freud-section{background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:12px}
+.freud-label{font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.defence{font-family:var(--mono);font-size:10px;padding:4px 8px;background:rgba(123,92,212,.06);border:1px solid rgba(123,92,212,.12);border-radius:4px;margin:2px;display:inline-block;color:var(--accent)}
+
+/* prose */
+.prose{font-size:14px;line-height:1.8;color:var(--text);white-space:pre-wrap}
+.prose strong{color:var(--bright)}
+
+/* confidence */
+.conf-bar{display:flex;align-items:center;gap:8px;margin:10px 0}
+.conf-track{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.conf-fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.16,1,.3,1)}
+.conf-val{font-family:var(--mono);font-size:11px;color:var(--bright);min-width:28px;text-align:right}
+
+/* loading */
+.loading{text-align:center;padding:40px;display:none}
+.loading.show{display:block}
+.loading p{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.loading .trace{font-size:10px;color:var(--dim);margin-top:8px}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.loading .dot{animation:pulse 1.5s infinite}
+
+/* footer */
+.footer{text-align:center;padding:36px 0;border-top:1px solid var(--border);margin-top:36px}
+.footer p{font-family:var(--mono);font-size:9px;color:var(--dim);line-height:2.2}
+
+@media(max-width:640px){.stats{gap:14px}.channel-row{grid-template-columns:1fr 1fr;font-size:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="hdr">
+<h1>Fall<em>Lead</em> Elite</h1>
+<div class="sub">IFA LEAD INTELLIGENCE · FCA CONSUMER DUTY · SOVEREIGN</div>
+<div class="tagline">Vulnerability first. Revenue second. Always.</div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats" id="statsBar" style="display:none">
+<div class="stat"><div class="stat-val" id="statTotal">—</div><div class="stat-label">Total Leads</div></div>
+<div class="stat"><div class="stat-val vul" id="statVul">—</div><div class="stat-label">Vulnerable</div></div>
+<div class="stat"><div class="stat-val comp" id="statComp">—</div><div class="stat-label">Compliance Flags</div></div>
+<div class="stat"><div class="stat-val clear" id="statClear">—</div><div class="stat-label">Clear to Route</div></div>
+<div class="stat"><div class="stat-val" id="statJunk" style="color:var(--dim)">—</div><div class="stat-label">Junk / Bot</div></div>
+</div>
+
+<!-- UPLOAD PANEL -->
+<div class="panel panel-glow" data-engine="α intake">
+<div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault();this.classList.add('active')" ondragleave="this.classList.remove('active')" ondrop="handleDrop(event)">
+<h3>Drop your lead files here</h3>
+<p>CSV, TXT, MD — lead responses, call logs, CRM exports, compliance docs, agency reports</p>
+<input type="file" id="fileInput" multiple accept=".csv,.txt,.md,.json" style="display:none" onchange="handleFiles(this.files)">
+</div>
+<div class="file-list" id="fileList"></div>
+<div class="controls">
+<button class="btn btn-primary" id="analyseBtn" onclick="runAnalysis()" disabled>Analyse Leads ◊</button>
+<button class="btn btn-outline" onclick="toggleSettings()">⚙ Provider Keys</button>
+<span class="hint">FCA vulnerability screening runs first · always</span>
+</div>
+<div class="settings" id="settings">
+<div class="key-row"><span class="key-label">Gemini</span><input type="password" class="key-input" id="key-gemini" placeholder="Free tier key"><div class="key-dot" id="dot-gemini"></div></div>
+<div class="key-row"><span class="key-label">DeepSeek</span><input type="password" class="key-input" id="key-deepseek" placeholder="Free tier key"><div class="key-dot" id="dot-deepseek"></div></div>
+<div class="key-row"><span class="key-label">Anthropic</span><input type="password" class="key-input" id="key-anthropic" placeholder="Paid fallback"><div class="key-dot" id="dot-anthropic"></div></div>
+<button class="btn btn-outline" onclick="saveKeys()" style="margin-top:8px">Save keys</button>
+<p style="font-family:var(--mono);font-size:8px;color:var(--dim);margin-top:6px">Keys stored in your browser only. Direct API calls. Sovereign.</p>
+</div>
+</div>
+
+<!-- LOADING -->
+<div class="loading" id="loading">
+<p class="dot">◊ Running lead intelligence pipeline...</p>
+<div class="trace" id="trace">α intake → parsing files</div>
+</div>
+
+<!-- RESULTS -->
+<div class="results" id="results">
+
+<!-- VUL ALERT -->
+<div class="vul-alert" id="vulAlert" style="display:none">
+<h3>⚠ Vulnerable Customers Detected</h3>
+<p id="vulAlertText"></p>
+</div>
+
+<!-- VULNERABILITY SUMMARY (ALWAYS FIRST) -->
+<div class="panel" data-engine="ε vulnerability gate" id="vulPanel" style="display:none">
+<span class="label">Vulnerability Summary — FCA Consumer Duty</span>
+<div id="vulSummary"></div>
+</div>
+
+<!-- COMPLIANCE SUMMARY -->
+<div class="panel" data-engine="ζ compliance gate" id="compPanel" style="display:none">
+<span class="label">Compliance Risk Register</span>
+<div id="compSummary"></div>
+</div>
+
+<!-- LEAD CARDS -->
+<div class="panel" data-engine="β vectoriser + γ classifier" id="leadsPanel" style="display:none">
+<span class="label">Lead Analysis — Priority Ordered</span>
+<div class="lead-grid" id="leadGrid"></div>
+</div>
+
+<!-- CAMPAIGN ATTRIBUTION -->
+<div class="panel" data-engine="δ attribution" id="campPanel" style="display:none">
+<span class="label">Campaign Attribution — Three-Way Comparison</span>
+<div id="campData"></div>
+</div>
+
+<!-- ROUTING TABLE -->
+<div class="panel" data-engine="η router" id="routePanel" style="display:none">
+<span class="label">Advisor Routing Recommendation</span>
+<div id="routeData"></div>
+</div>
+
+<!-- FREUD ENGINE -->
+<div class="panel" data-engine="FreudEngine" id="freudPanel" style="display:none">
+<span class="label">Psychological Pattern Analysis</span>
+<div id="freudData"></div>
+</div>
+
+<!-- FULL AI ANALYSIS -->
+<div class="panel" data-engine="Ω orchestrator" id="analysisPanel" style="display:none">
+<span class="label">Full Intelligence Report</span>
+<div class="prose" id="fullAnalysis"></div>
+<div class="conf-bar" style="margin-top:16px">
+<span style="font-family:var(--mono);font-size:9px;color:var(--dim)">Confidence</span>
+<div class="conf-track"><div class="conf-fill" id="confFill" style="width:0"></div></div>
+<span class="conf-val" id="confVal">—</span>
+</div>
+</div>
+
+<!-- ACTION ITEMS -->
+<div class="panel" data-engine="θ actions" id="actionPanel" style="display:none">
+<span class="label">Priority Actions for Monday Meeting</span>
+<div class="prose" id="actionItems"></div>
+</div>
+
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+<p>FallLead Elite · IFA Lead Intelligence Engine · Sovereign Single-File HTML</p>
+<p>FCA Consumer Duty Compliant · Vulnerability First · 8+1 Agent Architecture</p>
+<p>FreudEngine · BloomVector · ComplianceGate · AdvisorRouter · CampaignForensics</p>
+<p>Built by AI Native Solutions · ◊·κ=1 · 510,510</p>
+</div>
+
+</div>
+
+<script>
+// ═══ STATE ═══
+let uploadedFiles = {};
+const PRIMES = [2,3,5,7,11,13,17];
+const RING_NAMES = ['Ground','Signal','Gate','Heart','Voice','Mirror','Watcher'];
+const RING_COLORS = ['#4a9ec8','#3db88a','#d44040','#c9973e','#7b5cd4','#d44040','#4a9ec8'];
+const VUL_CODES = ['VUL-AGE','VUL-BEREAVEMENT','VUL-HEALTH','VUL-FINANCIAL-STRESS','VUL-COMPREHENSION','VUL-PRESSURE','VUL-CAPACITY','VUL-LANGUAGE','VUL-ISOLATION','VUL-DIGITAL','VUL-CARER','VUL-HOUSING','VUL-ADDICTION','VUL-DOMESTIC','VUL-LITERACY'];
+const COMP_CODES = ['COMP-UNSUITABLE','COMP-JURISDICTION','COMP-EXISTING','COMP-PRODUCT-MATCH','COMP-CAPACITY','COMP-SCAM-RISK','COMP-DB-TRANSFER','COMP-TIMELINE','COMP-TPS','COMP-CONSENT','COMP-DATA-SOURCE','COMP-MINOR','COMP-SANCTIONS','COMP-DUPLICATE-FIRM'];
+
+// ═══ FILE HANDLING ═══
+function handleDrop(e){e.preventDefault();e.currentTarget.classList.remove('active');handleFiles(e.dataTransfer.files)}
+function handleFiles(files){
+  for(const f of files){
+    const reader=new FileReader();
+    reader.onload=function(e){
+      uploadedFiles[f.name]={content:e.target.result,size:f.size,type:f.name.split('.').pop()};
+      renderFileList();
+      document.getElementById('analyseBtn').disabled=Object.keys(uploadedFiles).length===0;
+    };
+    reader.readAsText(f);
+  }
+}
+function renderFileList(){
+  const el=document.getElementById('fileList');
+  el.innerHTML='';
+  for(const[name,f]of Object.entries(uploadedFiles)){
+    const div=document.createElement('div');div.className='file-item';
+    const sizeKB=(f.size/1024).toFixed(1);
+    div.innerHTML=`<span>📄 ${name}</span><span class="size">${sizeKB}KB</span><span class="remove" onclick="delete uploadedFiles['${name}'];renderFileList()">✕</span>`;
+    el.appendChild(div);
+  }
+}
+function toggleSettings(){document.getElementById('settings').classList.toggle('open')}
+function saveKeys(){
+  ['gemini','deepseek','anthropic'].forEach(p=>{
+    const v=document.getElementById('key-'+p).value.trim();
+    if(v){localStorage.setItem('fl_key_'+p,v);document.getElementById('dot-'+p).classList.add('on')}
+  });
+}
+function loadKeys(){
+  ['gemini','deepseek','anthropic'].forEach(p=>{
+    const v=localStorage.getItem('fl_key_'+p);
+    if(v){document.getElementById('key-'+p).value=v;document.getElementById('dot-'+p).classList.add('on')}
+  });
+}
+
+// ═══ AI ROUTER ═══
+async function callAI(system,user){
+  const backends=[
+    {name:'gemini',key:localStorage.getItem('fl_key_gemini'),fmt:'gemini',
+     url:'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'},
+    {name:'deepseek',key:localStorage.getItem('fl_key_deepseek'),fmt:'openai',
+     url:'https://api.deepseek.com/v1/chat/completions',model:'deepseek-chat'},
+    {name:'anthropic',key:localStorage.getItem('fl_key_anthropic'),fmt:'anthropic',
+     url:'https://api.anthropic.com/v1/messages',model:'claude-sonnet-4-20250514'}
+  ];
+  for(const b of backends){
+    if(!b.key)continue;
+    try{
+      let result;
+      if(b.fmt==='gemini'){
+        const r=await fetch(b.url+'?key='+b.key,{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({contents:[{parts:[{text:system+'\n\n'+user}]}],generationConfig:{temperature:0.2,maxOutputTokens:8000}})});
+        const d=await r.json();result=d.candidates?.[0]?.content?.parts?.[0]?.text;
+      }else if(b.fmt==='openai'){
+        const r=await fetch(b.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+b.key},
+          body:JSON.stringify({model:b.model,messages:[{role:'system',content:system},{role:'user',content:user}],temperature:0.2,max_tokens:8000})});
+        const d=await r.json();result=d.choices?.[0]?.message?.content;
+      }else if(b.fmt==='anthropic'){
+        const r=await fetch(b.url,{method:'POST',headers:{'Content-Type':'application/json','x-api-key':b.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+          body:JSON.stringify({model:b.model,max_tokens:8000,system:system,messages:[{role:'user',content:user}]})});
+        const d=await r.json();result=d.content?.filter(c=>c.type==='text').map(c=>c.text).join('\n');
+      }
+      if(result)return{text:result,provider:b.name};
+    }catch(e){console.warn(b.name+' failed:',e)}
+  }
+  return null;
+}
+
+// ═══ RENDER HELPERS ═══
+function renderBloomMini(rings,container){
+  const wrap=document.createElement('div');wrap.className='bloom-mini';
+  rings.forEach((v,i)=>{
+    const bar=document.createElement('div');bar.className='bloom-bar';
+    bar.style.background=RING_COLORS[i];bar.style.height='0%';
+    bar.title=RING_NAMES[i]+': '+v;
+    wrap.appendChild(bar);
+    setTimeout(()=>{bar.style.height=Math.max(2,v)+'%'},100+i*60);
+  });
+  container.appendChild(wrap);
+}
+
+function renderLeadCard(lead){
+  const card=document.createElement('div');
+  const cls=lead.vulnerability_status==='CRITICAL'||lead.vulnerability_status==='FLAGGED'?'vul':
+            lead.compliance_status==='BLOCK'||lead.compliance_status==='REVIEW'?'comp':
+            lead.quality_score>=60?'good':'junk';
+  card.className='lead-card '+cls;
+  
+  const scoreClass=lead.quality_score>=70?'high':lead.quality_score>=40?'med':'low';
+  
+  let tagsHTML='';
+  if(lead.vulnerability_flags)lead.vulnerability_flags.forEach(f=>{tagsHTML+=`<span class="tag tag-vul">${f}</span>`});
+  if(lead.compliance_flags)lead.compliance_flags.forEach(f=>{tagsHTML+=`<span class="tag tag-comp">${f}</span>`});
+  if(lead.routing)tagsHTML+=`<span class="tag tag-route">→ ${lead.routing}</span>`;
+  
+  card.innerHTML=`
+    <div class="lead-head">
+      <span class="lead-name">${lead.name||lead.lead_id}</span>
+      <span class="lead-score ${scoreClass}">${lead.quality_score}/100</span>
+    </div>
+    <div class="lead-tags">${tagsHTML}</div>
+    <div class="lead-body">${lead.summary||''}</div>
+    ${lead.routing?`<div class="lead-routing">Route → ${lead.routing} | Priority: ${lead.priority||'STANDARD'}</div>`:''}
+  `;
+  
+  if(lead.bloom){
+    const bloomWrap=document.createElement('div');
+    renderBloomMini(lead.bloom,bloomWrap);
+    card.querySelector('.lead-body').after(bloomWrap);
+  }
+  
+  return card;
+}
+
+// ═══ MAIN ANALYSIS ═══
+async function runAnalysis(){
+  const btn=document.getElementById('analyseBtn');
+  const loading=document.getElementById('loading');
+  const results=document.getElementById('results');
+  
+  btn.disabled=true;btn.textContent='Analysing...';
+  loading.classList.add('show');results.classList.remove('show');
+  
+  const trace=document.getElementById('trace');
+  const fileContents=Object.entries(uploadedFiles).map(([name,f])=>`--- FILE: ${name} ---\n${f.content.substring(0,15000)}`).join('\n\n');
+  
+  const traceSteps=['α intake → parsing file structure','ε vulnerability gate → screening for VUL codes',
+    'ζ compliance gate → checking COMP codes','β vectoriser → building bloom vectors',
+    'γ classifier → scoring lead quality','δ attribution → cross-referencing campaign data',
+    'FreudEngine → analysing psychological patterns','η router → matching to advisors',
+    'θ actions → generating priority actions','Ω orchestrator → compiling report'];
+  let step=0;
+  const traceInterval=setInterval(()=>{if(step<traceSteps.length){trace.textContent=traceSteps[step];step++}},2500);
+
+  const systemPrompt=`You are FallLead Elite, an IFA lead intelligence engine. You analyse lead data for independent financial advisory firms with FCA Consumer Duty compliance built in.
+
+CRITICAL RULE: Vulnerability screening ALWAYS comes first. Before ANY commercial scoring, check every lead for vulnerability indicators:
+${VUL_CODES.join(', ')}
+
+And compliance flags:
+${COMP_CODES.join(', ')}
+
+You will receive multiple files. Cross-reference ALL of them. Flag mismatches between files.
+
+Respond ONLY in this JSON format (no markdown, no backticks):
+{
+  "stats": {"total": N, "vulnerable": N, "compliance_flags": N, "clear": N, "junk": N},
+  "vulnerable_leads": [
+    {"lead_id": "...", "name": "...", "age": N, "vul_flags": ["VUL-AGE","VUL-BEREAVEMENT"], "evidence": "quoted text from files", "routing": "Sarah Mitchell", "priority": "URGENT", "quality_score": N, "bloom": [R0,R1,R2,R3,R4,R5,R6], "summary": "..."}
+  ],
+  "compliance_leads": [
+    {"lead_id": "...", "name": "...", "comp_flags": ["COMP-SCAM-RISK"], "evidence": "...", "action": "...", "priority": "URGENT", "quality_score": N, "bloom": [R0,R1,R2,R3,R4,R5,R6], "summary": "..."}
+  ],
+  "quality_leads": [
+    {"lead_id": "...", "name": "...", "quality_score": N, "vulnerability_status": "CLEAR", "compliance_status": "CLEAR", "routing": "advisor name", "priority": "STANDARD", "bloom": [R0,R1,R2,R3,R4,R5,R6], "summary": "..."}
+  ],
+  "junk_leads": [
+    {"lead_id": "...", "reason": "bot cluster / competitor / bounce", "count": N}
+  ],
+  "campaign_attribution": {
+    "google": {"agency": N, "crm": N, "csv": N, "agency_cpl": N, "true_cpl": N},
+    "meta": {"agency": N, "crm": N, "csv": N, "agency_cpl": N, "true_cpl": N},
+    "linkedin": {"agency": N, "crm": N, "csv": N, "agency_cpl": N, "true_cpl": N, "competitor_count": N, "genuine_leads": N},
+    "direct_mail": {"agency": N, "crm": N, "csv": N, "agency_cpl": N, "true_cpl": N}
+  },
+  "routing_table": [
+    {"advisor": "name", "current_load": N, "capacity": N, "recommended_new": N, "notes": "..."}
+  ],
+  "freud_patterns": {
+    "defence_mechanisms": ["list of psychological defence patterns observed across leads"],
+    "hidden_needs": ["needs expressed indirectly that advisors should probe"],
+    "scam_psychology": "analysis of how scam targeting is affecting lead behaviour"
+  },
+  "data_quality_issues": ["list of data problems found across all files"],
+  "cross_file_conflicts": ["list of conflicts between different files about the same leads"],
+  "action_items": {"immediate": ["..."], "this_week": ["..."], "strategic": ["..."]},
+  "confidence": N,
+  "full_analysis": "Detailed prose analysis covering all findings, cross-references, and recommendations. Multiple paragraphs."
+}`;
+
+  const response=await callAI(systemPrompt,`Analyse these lead files for an IFA firm. Vulnerability screening first. Flag everything.\n\n${fileContents}`);
+  
+  clearInterval(traceInterval);
+  loading.classList.remove('show');
+  
+  if(!response){
+    btn.disabled=false;btn.textContent='Analyse Leads ◊';
+    toggleSettings();
+    document.getElementById('vulAlert').style.display='block';
+    document.getElementById('vulAlertText').textContent='No API keys configured. Add at least one provider key to run analysis.';
+    results.classList.add('show');
+    return;
+  }
+
+  let data;
+  try{
+    const cleaned=response.text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim();
+    const jsonMatch=cleaned.match(/\{[\s\S]*\}/);
+    data=JSON.parse(jsonMatch?jsonMatch[0]:cleaned);
+  }catch(e){
+    data={stats:{total:0,vulnerable:0,compliance_flags:0,clear:0,junk:0},
+      vulnerable_leads:[],compliance_leads:[],quality_leads:[],junk_leads:[],
+      campaign_attribution:{},routing_table:[],freud_patterns:{defence_mechanisms:[],hidden_needs:[]},
+      data_quality_issues:[],cross_file_conflicts:[],action_items:{immediate:[],this_week:[],strategic:[]},
+      confidence:20,full_analysis:response.text};
+  }
+
+  // Render stats
+  const stats=data.stats||{};
+  document.getElementById('statsBar').style.display='flex';
+  document.getElementById('statTotal').textContent=stats.total||'—';
+  document.getElementById('statVul').textContent=stats.vulnerable||'0';
+  document.getElementById('statComp').textContent=stats.compliance_flags||'0';
+  document.getElementById('statClear').textContent=stats.clear||'0';
+  document.getElementById('statJunk').textContent=stats.junk||'0';
+
+  // Vulnerability alert
+  if((data.vulnerable_leads||[]).length>0){
+    document.getElementById('vulAlert').style.display='block';
+    document.getElementById('vulAlertText').textContent=
+      `${data.vulnerable_leads.length} vulnerable customer(s) detected. FCA Consumer Duty requires these leads be routed through Sarah Mitchell (vulnerable customer handler) before any commercial processing. Vulnerability summary appears BEFORE commercial analysis below.`;
+  }
+
+  // Vulnerability panel
+  if((data.vulnerable_leads||[]).length>0){
+    const vp=document.getElementById('vulPanel');vp.style.display='block';
+    const vs=document.getElementById('vulSummary');vs.innerHTML='';
+    data.vulnerable_leads.forEach(l=>{vs.appendChild(renderLeadCard({...l,name:l.name||l.lead_id,vulnerability_status:'CRITICAL',vulnerability_flags:l.vul_flags,compliance_flags:[]}))});
+  }
+
+  // Compliance panel
+  if((data.compliance_leads||[]).length>0){
+    const cp=document.getElementById('compPanel');cp.style.display='block';
+    const cs=document.getElementById('compSummary');cs.innerHTML='';
+    data.compliance_leads.forEach(l=>{cs.appendChild(renderLeadCard({...l,name:l.name||l.lead_id,vulnerability_status:'CLEAR',vulnerability_flags:[],compliance_flags:l.comp_flags,compliance_status:'REVIEW'}))});
+  }
+
+  // Quality leads
+  const lp=document.getElementById('leadsPanel');lp.style.display='block';
+  const lg=document.getElementById('leadGrid');lg.innerHTML='';
+  (data.quality_leads||[]).slice(0,30).forEach(l=>{lg.appendChild(renderLeadCard({...l,vulnerability_flags:[],compliance_flags:[]}))});
+  if((data.junk_leads||[]).length>0){
+    data.junk_leads.forEach(j=>{
+      const card=document.createElement('div');card.className='lead-card junk';
+      card.innerHTML=`<div class="lead-head"><span class="lead-name">${j.lead_id||'Junk cluster'}</span><span class="lead-score low">JUNK</span></div><div class="lead-body">${j.reason} ${j.count?'('+j.count+' leads)':''}</div>`;
+      lg.appendChild(card);
+    });
+  }
+
+  // Campaign attribution
+  if(data.campaign_attribution){
+    const cap=document.getElementById('campPanel');cap.style.display='block';
+    const cd=document.getElementById('campData');cd.innerHTML='';
+    cd.innerHTML=`<div class="channel-row head"><span>Channel</span><span>Agency</span><span>CRM</span><span>CSV</span><span>True CPL</span></div>`;
+    for(const[ch,d]of Object.entries(data.campaign_attribution)){
+      const mismatch=d.agency!==d.crm||d.crm!==d.csv;
+      cd.innerHTML+=`<div class="channel-row${mismatch?' mismatch':''}"><span>${ch}</span><span>${d.agency||'—'}</span><span>${d.crm||'—'}</span><span>${d.csv||'—'}</span><span>£${d.true_cpl||'—'}</span></div>`;
+    }
+    if(data.campaign_attribution.linkedin?.competitor_count){
+      cd.innerHTML+=`<div style="margin-top:8px;font-family:var(--mono);font-size:10px;color:var(--red)">⚠ LinkedIn: ${data.campaign_attribution.linkedin.competitor_count} of ${data.campaign_attribution.linkedin.agency} leads are competitor research (${data.campaign_attribution.linkedin.genuine_leads||'?'} genuine). True CPL: £${data.campaign_attribution.linkedin.true_cpl||'?'}</div>`;
+    }
+  }
+
+  // Routing table
+  if((data.routing_table||[]).length>0){
+    const rp=document.getElementById('routePanel');rp.style.display='block';
+    const rd=document.getElementById('routeData');rd.innerHTML='';
+    rd.innerHTML=`<div class="channel-row head"><span>Advisor</span><span>Current</span><span>Capacity</span><span>New</span><span>Notes</span></div>`;
+    data.routing_table.forEach(r=>{
+      const over=(r.current_load||0)+(r.recommended_new||0)>(r.capacity||15);
+      rd.innerHTML+=`<div class="channel-row${over?' mismatch':''}"><span>${r.advisor}</span><span>${r.current_load||'?'}</span><span>${r.capacity||'?'}</span><span>${r.recommended_new||0}</span><span style="font-size:9px">${r.notes||''}</span></div>`;
+    });
+  }
+
+  // FreudEngine
+  if(data.freud_patterns){
+    const fp=document.getElementById('freudPanel');fp.style.display='block';
+    const fd=document.getElementById('freudData');fd.innerHTML='';
+    const fr=data.freud_patterns;
+    if(fr.defence_mechanisms?.length){
+      fd.innerHTML+=`<div class="freud-section"><div class="freud-label">Defence Mechanisms Detected Across Lead Pool</div>${fr.defence_mechanisms.map(d=>`<span class="defence">${d}</span>`).join('')}</div>`;
+    }
+    if(fr.hidden_needs?.length){
+      fd.innerHTML+=`<div class="freud-section" style="margin-top:8px"><div class="freud-label">Hidden Needs (advisors should probe)</div><div style="font-size:12px;color:var(--text);line-height:1.7">${fr.hidden_needs.join('<br>')}</div></div>`;
+    }
+    if(fr.scam_psychology){
+      fd.innerHTML+=`<div class="freud-section" style="margin-top:8px"><div class="freud-label">Scam Psychology Analysis</div><div style="font-size:12px;color:var(--orange);line-height:1.7">${fr.scam_psychology}</div></div>`;
+    }
+  }
+
+  // Full analysis
+  const ap=document.getElementById('analysisPanel');ap.style.display='block';
+  document.getElementById('fullAnalysis').textContent=data.full_analysis||'No analysis returned.';
+  const conf=data.confidence||0;
+  document.getElementById('confFill').style.width=conf+'%';
+  document.getElementById('confFill').style.background=conf>60?'var(--green)':conf>35?'var(--gold)':'var(--red)';
+  document.getElementById('confVal').textContent=conf+'/100';
+
+  // Actions
+  if(data.action_items){
+    const acp=document.getElementById('actionPanel');acp.style.display='block';
+    let html='';
+    if(data.action_items.immediate?.length)html+=`<strong>IMMEDIATE (today):</strong>\n${data.action_items.immediate.map((a,i)=>`${i+1}. ${a}`).join('\n')}\n\n`;
+    if(data.action_items.this_week?.length)html+=`<strong>THIS WEEK:</strong>\n${data.action_items.this_week.map((a,i)=>`${i+1}. ${a}`).join('\n')}\n\n`;
+    if(data.action_items.strategic?.length)html+=`<strong>STRATEGIC:</strong>\n${data.action_items.strategic.map((a,i)=>`${i+1}. ${a}`).join('\n')}`;
+    document.getElementById('actionItems').innerHTML=html;
+  }
+
+  // Data quality + cross-file issues appended to analysis
+  if(data.data_quality_issues?.length||data.cross_file_conflicts?.length){
+    let extra='\n\n';
+    if(data.data_quality_issues?.length)extra+=`<strong>DATA QUALITY ISSUES:</strong>\n${data.data_quality_issues.join('\n')}\n\n`;
+    if(data.cross_file_conflicts?.length)extra+=`<strong>CROSS-FILE CONFLICTS:</strong>\n${data.cross_file_conflicts.join('\n')}`;
+    document.getElementById('fullAnalysis').innerHTML+=extra;
+  }
+
+  results.classList.add('show');
+  btn.disabled=false;btn.textContent='Analyse Leads ◊';
+}
+
+// ═══ INIT ═══
+loadKeys();
+</script>
+</body>
+</html>
